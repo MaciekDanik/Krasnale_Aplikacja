@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Krasnale</string>
     <string name="Title">Krasnale</string>
+    <string name="take_picture">title</string>
 </resources>
