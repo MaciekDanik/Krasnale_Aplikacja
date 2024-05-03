@@ -8,12 +8,15 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ContentResolver
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -22,11 +25,19 @@ import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.appcompat.app.AlertDialog
+import okhttp3.MediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import retrofit2.Call
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
+import retrofit2.Callback
+import retrofit2.Response
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), UploadRequestBody.UploadCallback {
     private  var selectedImageUri: Uri? = null
 
     private val CAMERA_PERMISSION_CODE = 1000
@@ -149,7 +160,45 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun uploadImage() {
-        //TO DO
+        if (selectedImageUri == null)
+        {
+            Toast.makeText(this,"Select image first!",Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val parcelFileDescriptor = contentResolver.openFileDescriptor(
+            selectedImageUri!!,"r",null
+        )?: return
+
+        val inputStream = FileInputStream(parcelFileDescriptor.fileDescriptor)
+        val file = File(cacheDir, contentResolver.getFilename(selectedImageUri!!))
+
+        val outputStream = FileOutputStream(file)
+        inputStream.copyTo(outputStream)
+        val progbar = findViewById<ProgressBar>(R.id.progBar)
+        progbar.progress = 0
+        val body = UploadRequestBody(file,"image",this)
+
+
+        MyApi().uploadImage(MultipartBody.Part.createFormData(
+            "image",
+            file.name,
+            body
+        ),
+            RequestBody.create(MediaType.parse("multipatrt/form-data"),"json")
+        ).enqueue(object : Callback<UploaadResponse>{
+            override fun onResponse(call: Call<UploaadResponse>, response: Response<UploaadResponse>) {
+               response.body()?.let {
+                   Toast.makeText(this@MainActivity,it.message,Toast.LENGTH_SHORT).show()
+                   progbar.progress = 100
+               }
+            }
+
+            override fun onFailure(p0: Call<UploaadResponse>, t: Throwable) {
+                Toast.makeText(this@MainActivity, t.message,Toast.LENGTH_SHORT).show()
+                progbar.progress = 0            }
+
+        })
     }
 
     private fun takePhoto(){
@@ -172,7 +221,26 @@ class MainActivity : AppCompatActivity() {
         if (resultCode == Activity.RESULT_OK && requestCode == IMAGE_CAPTURE){
             ImV.setImageURI(selectedImageUri)
         } else if (resultCode == Activity.RESULT_OK && requestCode == IMAGE_CHOOSE){
-            ImV.setImageURI(data?.data)
+            selectedImageUri = data?.data
+            //ImV.setImageURI(data?.data)
+            ImV.setImageURI(selectedImageUri)
         }
     }
+
+    override fun onProgresUpdate(percentage: Int) {
+        findViewById<ProgressBar>(R.id.progBar).progress = percentage
+    }
+}
+
+private fun ContentResolver.getFilename(selectedImageUri: Uri): String {
+    var name = ""
+    val returnCursor = this.query(selectedImageUri,null,null,null,null)
+
+    if (returnCursor != null){
+        val nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        returnCursor.moveToFirst()
+        name = returnCursor.getString(nameIndex)
+        returnCursor.close()
+    }
+    return name
 }

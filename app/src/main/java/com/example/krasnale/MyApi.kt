@@ -9,19 +9,20 @@ import retrofit2.create
 import retrofit2.http.Multipart
 import retrofit2.http.Part
 import retrofit2.http.POST
+import retrofit2.Call
 
 interface MyApi {
     @Multipart
-    @POST("")
+    @POST("=upload") //tu reszta do posta
     fun uploadImage(
         @Part image : MultipartBody.Part,
         @Part("desc") desc: RequestBody
-    )
+    ): Call<UploaadResponse>
 
     companion object{
         operator fun invoke(): MyApi{
             return Retrofit.Builder()
-                .baseUrl("")
+                .baseUrl("") //tu url "krasnale.azure.cos/"
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
                 .create(MyApi::class.java)
