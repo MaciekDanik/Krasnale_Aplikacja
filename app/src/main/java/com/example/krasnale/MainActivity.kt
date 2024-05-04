@@ -36,6 +36,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import retrofit2.Callback
 import retrofit2.Response
+import retrofit2.create
 
 class MainActivity : AppCompatActivity(), UploadRequestBody.UploadCallback {
     private  var selectedImageUri: Uri? = null
@@ -172,12 +173,14 @@ class MainActivity : AppCompatActivity(), UploadRequestBody.UploadCallback {
 
         val inputStream = FileInputStream(parcelFileDescriptor.fileDescriptor)
         val file = File(cacheDir, contentResolver.getFilename(selectedImageUri!!))
+        Toast.makeText(this,"File selected",Toast.LENGTH_SHORT).show()
 
         val outputStream = FileOutputStream(file)
         inputStream.copyTo(outputStream)
         val progbar = findViewById<ProgressBar>(R.id.progBar)
         progbar.progress = 0
         val body = UploadRequestBody(file,"image",this)
+        Toast.makeText(this,"UploadBodyRequested",Toast.LENGTH_SHORT).show()
 
 
         MyApi().uploadImage(MultipartBody.Part.createFormData(
@@ -189,13 +192,15 @@ class MainActivity : AppCompatActivity(), UploadRequestBody.UploadCallback {
         ).enqueue(object : Callback<UploaadResponse>{
             override fun onResponse(call: Call<UploaadResponse>, response: Response<UploaadResponse>) {
                response.body()?.let {
-                   Toast.makeText(this@MainActivity,it.message,Toast.LENGTH_SHORT).show()
+                   Toast.makeText(this@MainActivity,it.message,Toast.LENGTH_LONG).show()
+                   //Toast.makeText(this@MainActivity,"onResponse",Toast.LENGTH_SHORT).show()
                    progbar.progress = 100
                }
             }
 
             override fun onFailure(p0: Call<UploaadResponse>, t: Throwable) {
-                Toast.makeText(this@MainActivity, t.message,Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, t.message,Toast.LENGTH_LONG).show()
+                //Toast.makeText(this@MainActivity, "Faliure",Toast.LENGTH_SHORT).show()
                 progbar.progress = 0            }
 
         })
