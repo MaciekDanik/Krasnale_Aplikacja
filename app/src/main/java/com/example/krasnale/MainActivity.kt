@@ -9,14 +9,17 @@ import android.content.pm.PackageManager
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentResolver
+import android.content.ContextParams
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -25,8 +28,12 @@ import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.appcompat.app.AlertDialog
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.MediaType
 import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import retrofit2.Call
 import java.io.File
@@ -36,6 +43,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import retrofit2.Callback
 import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.create
 
 class MainActivity : AppCompatActivity(), UploadRequestBody.UploadCallback {
@@ -171,36 +180,40 @@ class MainActivity : AppCompatActivity(), UploadRequestBody.UploadCallback {
             selectedImageUri!!,"r",null
         )?: return
 
-        val inputStream = FileInputStream(parcelFileDescriptor.fileDescriptor)
+
         val file = File(cacheDir, contentResolver.getFilename(selectedImageUri!!))
         Toast.makeText(this,"File selected",Toast.LENGTH_SHORT).show()
+        //Toast.makeText(this,"UploadBodyRequested",Toast.LENGTH_SHORT).show()
 
+        val inputStream = FileInputStream(parcelFileDescriptor.fileDescriptor)
         val outputStream = FileOutputStream(file)
         inputStream.copyTo(outputStream)
         val progbar = findViewById<ProgressBar>(R.id.progBar)
         progbar.progress = 0
+
         val body = UploadRequestBody(file,"image",this)
-        Toast.makeText(this,"UploadBodyRequested",Toast.LENGTH_SHORT).show()
-
-
         MyApi().uploadImage(MultipartBody.Part.createFormData(
             "image",
             file.name,
             body
         ),
-            RequestBody.create(MediaType.parse("multipatrt/form-data"),"json")
+            //RequestBody.create(MediaType.parse("image/"),"json")
         ).enqueue(object : Callback<UploaadResponse>{
             override fun onResponse(call: Call<UploaadResponse>, response: Response<UploaadResponse>) {
                response.body()?.let {
-                   Toast.makeText(this@MainActivity,it.message,Toast.LENGTH_LONG).show()
-                   //Toast.makeText(this@MainActivity,"onResponse",Toast.LENGTH_SHORT).show()
+                   //Toast.makeText(this@MainActivity,it.message,Toast.LENGTH_LONG).show()
+                   Toast.makeText(this@MainActivity,"Success",Toast.LENGTH_SHORT).show()
+                   findViewById<TextView>(R.id.txtView_ResponseLog).text = it.message
+                   Log.d("WYJEBKA", response.toString())
                    progbar.progress = 100
                }
             }
 
             override fun onFailure(p0: Call<UploaadResponse>, t: Throwable) {
-                Toast.makeText(this@MainActivity, t.message,Toast.LENGTH_LONG).show()
-                //Toast.makeText(this@MainActivity, "Faliure",Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this@MainActivity, t.message,Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, "Faliure",Toast.LENGTH_SHORT).show()
+                findViewById<TextView>(R.id.txtView_ResponseLog).text = t.message
+                Log.d("WYJEBKA", t.toString())
                 progbar.progress = 0            }
 
         })
@@ -232,7 +245,7 @@ class MainActivity : AppCompatActivity(), UploadRequestBody.UploadCallback {
         }
     }
 
-    override fun onProgresUpdate(percentage: Int) {
+    override fun onProgresUpdate(percentage: Int) { //w sumie nie potrzebne
         findViewById<ProgressBar>(R.id.progBar).progress = percentage
     }
 }

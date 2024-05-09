@@ -20,7 +20,7 @@ object RequestInterceptor : Interceptor{
         return chain.proceed(request)
     }
 }
-object AuthIterceptor : Interceptor{
+object AuthInterceptor : Interceptor{
     override fun intercept(chain: Interceptor.Chain): Response {
         val requestWithHeader = chain.request()
             .newBuilder()
@@ -33,26 +33,25 @@ object AuthIterceptor : Interceptor{
 
 interface MyApi {
     @Multipart
-    @POST("upload") //tu reszta do posta
+    @POST("image/upload") //print
     fun uploadImage(
-        @Part image : MultipartBody.Part,
-        @Part("desc") desc: RequestBody
-
+        @Part image: MultipartBody.Part
     ): Call<UploaadResponse>
 
     companion object{
         private val okHttpClient = OkHttpClient()
             .newBuilder()
-            .addInterceptor(AuthIterceptor)
+            .addInterceptor(AuthInterceptor)
             .addInterceptor(RequestInterceptor)
             .build()
         operator fun invoke(): MyApi{
             return Retrofit.Builder()
                 .client(okHttpClient)
-                .baseUrl("http:/krasnalewroclawskie.azurewebsites.net/") //tu url "krasnale.azure.cos/"
+                .baseUrl("http:/krasnalewroclawskie.azurewebsites.net/") //http:/192.168.0.151:3000/
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
                 .create(MyApi::class.java)
+
 
         }
     }

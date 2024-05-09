@@ -9,7 +9,7 @@ import java.io.FileInputStream
 import android.os.Handler
 
 class UploadRequestBody (
-    private val file: File,
+    private val image: File, //file
     private val contentType: String,
     private val callback: UploadCallback
 ): RequestBody() {
@@ -17,11 +17,11 @@ class UploadRequestBody (
 
     override fun contentType() = MediaType.parse("$contentType/*")
 
-    override fun contentLength() = file.length()
+    override fun contentLength() = image.length() //
     override fun writeTo(sink: BufferedSink) {
-        val length = file.length()
+        val length = image.length() //
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-        val fileInputStream = FileInputStream(file)
+        val fileInputStream = FileInputStream(image) //
         var uploaded = 0L
         fileInputStream.use { inputStream ->
             var read: Int
@@ -37,11 +37,11 @@ class UploadRequestBody (
     }
 
 
-    interface UploadCallback {
+    interface UploadCallback { // to do progresBara - można wywalić
         fun onProgresUpdate(percentage: Int)
     }
 
-    inner class ProgressUpdater(
+    inner class ProgressUpdater( //cała ta klasa też nie jest niezbędna
         private val uploaded: Long,
         private val total: Long
     ) : Runnable {

@@ -39,16 +39,14 @@
         android:layout_width="165dp"
         android:layout_height="69dp"
         android:layout_marginStart="123dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="32dp"
         android:layout_marginEnd="123dp"
-        android:layout_marginBottom="78dp"
         android:text="Upload"
         android:textSize="24dp"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/progBar" />
+        app:layout_constraintTop_toBottomOf="@+id/txtView_ResponseLog" />
 
     <ImageView
         android:id="@+id/imgView"
@@ -69,10 +67,23 @@
         android:layout_width="370dp"
         android:layout_height="0dp"
         android:layout_marginStart="50dp"
-        android:layout_marginTop="80dp"
         android:layout_marginEnd="50dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.508"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_Upload" />
+
+    <TextView
+        android:id="@+id/txtView_ResponseLog"
+        android:layout_width="343dp"
+        android:layout_height="75dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="32dp"
+        android:text="TextView"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_TakePhoto" />
 
