@@ -7,18 +7,21 @@ import okio.BufferedSink
 import java.io.File
 import java.io.FileInputStream
 import android.os.Handler
+import android.util.Log
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 
-class UploadRequestBody (
+class UploadRequestBody(
     private val image: File, //file
     private val contentType: String,
     private val callback: UploadCallback
-): RequestBody() {
+) : RequestBody() {
     private val DEFAULT_BUFFER_SIZE = 2048
 
-    override fun contentType() = MediaType.parse("$contentType/*")
+    override fun contentType() = "$contentType/*".toMediaTypeOrNull()
 
     override fun contentLength() = image.length() //
     override fun writeTo(sink: BufferedSink) {
+        Log.d("WYJEBKA", "writeTo")
         val length = image.length() //
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         val fileInputStream = FileInputStream(image) //
@@ -46,7 +49,7 @@ class UploadRequestBody (
         private val total: Long
     ) : Runnable {
         override fun run() {
-            callback.onProgresUpdate((100*uploaded/total).toInt())
+            callback.onProgresUpdate((100 * uploaded / total).toInt())
         }
     }
 }

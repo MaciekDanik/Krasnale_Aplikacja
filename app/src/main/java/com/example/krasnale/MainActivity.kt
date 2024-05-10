@@ -11,6 +11,7 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContextParams
 import android.net.Uri
+import android.net.http.HttpException
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -22,19 +23,24 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresExtension
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.appcompat.app.AlertDialog
+//import androidx.compose.runtime.Composable
+//import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.Call
 import java.io.File
 import java.io.FileInputStream
@@ -46,6 +52,7 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.create
+import java.io.IOException
 
 class MainActivity : AppCompatActivity(), UploadRequestBody.UploadCallback {
     private  var selectedImageUri: Uri? = null
@@ -180,36 +187,46 @@ class MainActivity : AppCompatActivity(), UploadRequestBody.UploadCallback {
             selectedImageUri!!,"r",null
         )?: return
 
-
-        val file = File(cacheDir, contentResolver.getFilename(selectedImageUri!!))
-        Toast.makeText(this,"File selected",Toast.LENGTH_SHORT).show()
-        //Toast.makeText(this,"UploadBodyRequested",Toast.LENGTH_SHORT).show()
-
-        val inputStream = FileInputStream(parcelFileDescriptor.fileDescriptor)
-        val outputStream = FileOutputStream(file)
-        inputStream.copyTo(outputStream)
         val progbar = findViewById<ProgressBar>(R.id.progBar)
         progbar.progress = 0
 
-        val body = UploadRequestBody(file,"image",this)
-        MyApi().uploadImage(MultipartBody.Part.createFormData(
-            "image",
-            file.name,
-            body
-        ),
-            //RequestBody.create(MediaType.parse("image/"),"json")
-        ).enqueue(object : Callback<UploaadResponse>{
-            override fun onResponse(call: Call<UploaadResponse>, response: Response<UploaadResponse>) {
-               response.body()?.let {
-                   //Toast.makeText(this@MainActivity,it.message,Toast.LENGTH_LONG).show()
-                   Toast.makeText(this@MainActivity,"Success",Toast.LENGTH_SHORT).show()
-                   findViewById<TextView>(R.id.txtView_ResponseLog).text = it.message
-                   Log.d("WYJEBKA", response.toString())
-                   progbar.progress = 100
-               }
+        ///nowy kod
+        val retrofit: Retrofit = Retrofit.Builder()
+                                    .baseUrl("https://49d493cd-74a7-47c4-a2e7-ad4022224dd1.mock.pstmn.io")// https://krasnalewroclawskie.azurewebsites.net/
+                                    .addConverterFactory(GsonConverterFactory.create())
+                                    .build()
+
+        val file = File(cacheDir, contentResolver.getFilename(selectedImageUri!!)) //cacheDir,
+        findViewById<TextView>(R.id.txtView_ResponseLog).text = file.name
+        file.createNewFile()
+//        file.outputStream().use {
+//            assets.open(file.name).copyTo(it)
+//        }
+        val requestFile: RequestBody = file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
+//        val requestFile: RequestBody = RequestBody.create("multipart/form-data".toMediaTypeOrNull(),file)
+
+
+        val body: MultipartBody.Part = MultipartBody.Part.createFormData("image",file.name, requestFile)
+
+        val img_name : RequestBody = RequestBody.create("multipart/form-data".toMediaTypeOrNull(),file.toString())
+
+        val apiService: ApiService = retrofit.create(ApiService::class.java)
+
+//        val call: Call<ImageUploadResponse> = apiService.uploadImage(body)
+        val call: Call<ImageUploadResponse> = apiService.uploadImage(body, img_name)
+
+        call.enqueue(object : Callback<ImageUploadResponse>{
+            override fun onResponse(call: Call<ImageUploadResponse>, response: Response<ImageUploadResponse>) {
+                response.body()?.let {
+                    //Toast.makeText(this@MainActivity,it.message,Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity,"Success",Toast.LENGTH_SHORT).show()
+                    findViewById<TextView>(R.id.txtView_ResponseLog).text = it.getMessage().toString()
+                    Log.d("WYJEBKA", response.toString())
+                    progbar.progress = 100
+                }
             }
 
-            override fun onFailure(p0: Call<UploaadResponse>, t: Throwable) {
+            override fun onFailure(p0: Call<ImageUploadResponse>, t: Throwable) {
                 //Toast.makeText(this@MainActivity, t.message,Toast.LENGTH_LONG).show()
                 Toast.makeText(this@MainActivity, "Faliure",Toast.LENGTH_SHORT).show()
                 findViewById<TextView>(R.id.txtView_ResponseLog).text = t.message
@@ -248,6 +265,7 @@ class MainActivity : AppCompatActivity(), UploadRequestBody.UploadCallback {
     override fun onProgresUpdate(percentage: Int) { //w sumie nie potrzebne
         findViewById<ProgressBar>(R.id.progBar).progress = percentage
     }
+
 }
 
 private fun ContentResolver.getFilename(selectedImageUri: Uri): String {
