@@ -190,35 +190,33 @@ class MainActivity : AppCompatActivity(), UploadRequestBody.UploadCallback {
         val progbar = findViewById<ProgressBar>(R.id.progBar)
         progbar.progress = 0
 
-        ///nowy kod
+        val okHttpClient = OkHttpClient()
+            .newBuilder()
+//            .addInterceptor(AuthInterceptor)
+//            .addInterceptor(RequestInterceptor)
+            .build()
+
         val retrofit: Retrofit = Retrofit.Builder()
-                                    .baseUrl("https://49d493cd-74a7-47c4-a2e7-ad4022224dd1.mock.pstmn.io")// https://krasnalewroclawskie.azurewebsites.net/
+                                    .client(okHttpClient)
+                                    .baseUrl("https://httpbin.org/")//https://krasnalewroclawskie.azurewebsites.net/
                                     .addConverterFactory(GsonConverterFactory.create())
                                     .build()
 
         val file = File(cacheDir, contentResolver.getFilename(selectedImageUri!!)) //cacheDir,
         findViewById<TextView>(R.id.txtView_ResponseLog).text = file.name
         file.createNewFile()
-//        file.outputStream().use {
-//            assets.open(file.name).copyTo(it)
-//        }
         val requestFile: RequestBody = file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
-//        val requestFile: RequestBody = RequestBody.create("multipart/form-data".toMediaTypeOrNull(),file)
-
-
         val body: MultipartBody.Part = MultipartBody.Part.createFormData("image",file.name, requestFile)
-
-        val img_name : RequestBody = RequestBody.create("multipart/form-data".toMediaTypeOrNull(),file.toString())
+//        val img_name : RequestBody = RequestBody.create("multipart/form-data".toMediaTypeOrNull(),file.toString())
 
         val apiService: ApiService = retrofit.create(ApiService::class.java)
-
-//        val call: Call<ImageUploadResponse> = apiService.uploadImage(body)
-        val call: Call<ImageUploadResponse> = apiService.uploadImage(body, img_name)
+        val call: Call<ImageUploadResponse> = apiService.uploadImage(body)
+//        val call: Call<ImageUploadResponse> = apiService.uploadImage(body, img_name)
 
         call.enqueue(object : Callback<ImageUploadResponse>{
             override fun onResponse(call: Call<ImageUploadResponse>, response: Response<ImageUploadResponse>) {
                 response.body()?.let {
-                    //Toast.makeText(this@MainActivity,it.message,Toast.LENGTH_LONG).show()
+                    //Toast.makeText(this@MainActivity,it.getMessage().toString(),Toast.LENGTH_LONG).show()
                     Toast.makeText(this@MainActivity,"Success",Toast.LENGTH_SHORT).show()
                     findViewById<TextView>(R.id.txtView_ResponseLog).text = it.getMessage().toString()
                     Log.d("WYJEBKA", response.toString())

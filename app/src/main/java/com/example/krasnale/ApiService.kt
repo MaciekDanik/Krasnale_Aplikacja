@@ -9,9 +9,9 @@ import retrofit2.http.Part
 
 interface ApiService {
     @Multipart
-    @POST("image/upload")
+    @POST("post") //image/upload
     fun uploadImage(
-        @Part image: MultipartBody.Part,
-        @Part ("image_name") img_name: RequestBody
+        @Part image: MultipartBody.Part
+        //@Part ("image_name") img_name: RequestBody
     ): Call<ImageUploadResponse>
 }
